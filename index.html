@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EARNING BD - Official App</title>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- 1. Monetag SDK (For Rewarded Video) -->
+    <script src='//libtl.com/sdk.js' data-zone='10398759' data-sdk='show_10398759'></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --tg-theme-bg-color: #0f172a;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-button-color: #667eea;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --primary-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gold-grad: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            --success-grad: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --locked-grad: linear-gradient(135deg, #2b32b2 0%, #1488cc 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            min-height: 100vh;
+            padding-bottom: 90px;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 15px; position: relative; }
+
+        /* Confetti Animation */
+        .confetti {
+            position: fixed; width: 10px; height: 10px; background-color: #f00;
+            animation: confetti-fall 3s linear infinite; z-index: 9999; top: -10px;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Fake Notification Bar */
+        .live-notify {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px 15px;
+            border-radius: 20px; font-size: 11px; z-index: 5000; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); opacity: 0; transition: 0.5s; pointer-events: none;
+            width: max-content;
+        }
+        .live-notify img { width: 20px; height: 20px; border-radius: 50%; }
+
+        /* Header & Balance */
+        .profile-header {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--glass-bg); padding: 15px; border-radius: 20px;
+            margin-bottom: 20px; border: var(--glass-border);
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar { 
+            width: 50px; height: 50px; border-radius: 50%; object-fit: cover; 
+            border: 2px solid #a5b4fc; background: #333;
+        }
+        .balance-badge {
+            background: var(--gold-grad); color: #000; padding: 5px 12px;
+            border-radius: 20px; font-weight: bold; font-size: 14px;
+        }
+        .balance-card {
+            background: var(--primary-grad); border-radius: 20px; padding: 25px;
+            text-align: center; margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden;
+        }
+        .balance-amount { font-size: 40px; font-weight: 800; display: block; }
+
+        /* Daily Check-in */
+        .daily-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .day-box {
+            border-radius: 12px; padding: 10px 5px; text-align: center; font-size: 11px; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; overflow: hidden; transition: transform 0.2s;
+        }
+        .day-box:active { transform: scale(0.95); }
+        .day-box.locked { background: var(--locked-grad); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.1); }
+        .day-box.active { background: var(--gold-grad); color: #000; font-weight: bold; animation: pulse-orange 2s infinite; border: 2px solid #fff; }
+        .day-box.claimed { background: var(--success-grad); color: #fff; border: 1px solid #4ade80; opacity: 0.9; }
+        @keyframes pulse-orange { 0% { box-shadow: 0 0 0 0 rgba(253, 160, 133, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(253, 160, 133, 0); } 100% { box-shadow: 0 0 0 0 rgba(253, 160, 133, 0); } }
+
+        /* Ad Banner Container */
+        .ad-container {
+            margin: 20px 0; border-radius: 10px; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.05); min-height: 50px;
+        }
+
+        /* Task List */
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+        .task-item {
+            background: var(--glass-bg); padding: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: var(--glass-border); transition: 0.2s;
+        }
+        .task-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+        .task-btn {
+            background: var(--tg-theme-button-color); color: #fff; border: none;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+        }
+
+        /* Spin Wheel */
+        .spin-container { text-align: center; padding: 20px; }
+        .wheel-wrapper { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+        .wheel-outer {
+            width: 100%; height: 100%; border-radius: 50%; border: 8px solid #fbbf24; overflow: hidden;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            background: conic-gradient(#ff6b6b 0deg 60deg, #feca57 60deg 120deg, #48dbfb 120deg 180deg, #ff9ff3 180deg 240deg, #54a0ff 240deg 300deg, #1dd1a1 300deg 360deg);
+            position: relative;
+        }
+        .wheel-label {
+            position: absolute; top: 50%; left: 50%; transform-origin: 0 0;
+            color: #fff; font-weight: bold; font-size: 14px; width: 60px; text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .wheel-pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #fff; z-index: 10;
+        }
+
+        /* Wallet & History */
+        .history-list { margin-top: 20px; }
+        .history-item {
+            display: flex; justify-content: space-between; padding: 12px;
+            background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 8px; font-size: 13px;
+        }
+        .status-btn {
+            background: #facc15; color: #000; border: none; padding: 3px 8px;
+            border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        .status-success { color: #4ade80; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* Form Controls */
+        .form-group { margin-bottom: 15px; }
+        .form-control {
+            width: 100%; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; color: #fff; font-size: 16px; outline: none;
+        }
+        .btn-main {
+            width: 100%; padding: 15px; border-radius: 15px; border: none;
+            background: var(--primary-grad); color: white; font-weight: bold; font-size: 16px;
+            margin-top: 10px; cursor: pointer;
+        }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; background-color: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px 0; }
+        .progress-bar { height: 10px; background-color: #4ade80; border-radius: 10px; width: 0%; transition: 0.3s; }
+
+        /* Navigation */
+        .bottom-nav {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 92%; background: rgba(20, 30, 48, 0.95); backdrop-filter: blur(10px);
+            border-radius: 25px; padding: 12px; display: flex; justify-content: space-around;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-item { color: #64748b; font-size: 12px; text-align: center; width: 20%; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .nav-item.active { color: #a5b4fc; transform: translateY(-5px); }
+
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #toast {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+            background: #fff; color: #000; padding: 10px 20px; border-radius: 50px;
+            font-weight: 600; font-size: 14px; z-index: 2000; display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 2. Adsterra Popunder Script (Added Here) -->
+    <script src="https://pl28329844.effectivegatecpm.com/ad/b0/fd/adb0fd5a3b4bc6b71113b020eb93777f.js"></script>
+
+    <!-- Fake Notification -->
+    <div id="live-notify" class="live-notify">
+        <img src="https://via.placeholder.com/20" alt="">
+        <span id="notify-text">Rahim withdraw 500 Tk</span>
+    </div>
+
+    <div class="container">
+        <!-- Toast Notification -->
+        <div id="toast">Message here</div>
+
+        <!-- ================= PAGE: HOME ================= -->
+        <div id="home-page" class="page active">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/50" id="user-photo" class="user-avatar" alt="User">
+                    <div class="user-text">
+                        <h3 id="user-name">Guest</h3>
+                        <p>ID: <span id="user-id">...</span></p>
+                    </div>
+                </div>
+                <div class="balance-badge">৳ <span id="header-balance">0.00</span></div>
+            </div>
+
+            <!-- Main Balance -->
+            <div class="balance-card">
+                <span style="font-size: 14px; opacity: 0.9;">সর্বমোট ব্যালেন্স</span>
+                <span class="balance-amount">৳ <span id="main-balance">0.00</span></span>
+                <!-- Referral Counter -->
+                <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 10px; display: inline-block;">
+                    <i class="fas fa-users"></i> রেফার: <span id="home-ref-count">0</span>/10
+                </div>
+            </div>
+
+            <!-- COLORFUL DAILY CHECK-IN -->
+            <h3 style="font-size: 16px; margin-bottom: 10px;"><i class="fas fa-calendar-check" style="color:#f472b6;"></i> ডেইলি বোনাস</h3>
+            <div class="daily-grid" id="daily-grid">
+                <!-- JS Will Render Days with Colors -->
+            </div>
+
+            <!-- Quick Actions -->
+            <h3 style="font-size: 18px; margin-bottom: 15px; margin-top: 20px;"><i class="fas fa-bolt" style="color:#facc15;"></i> কুইক আর্নিং</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div style="background: var(--glass-bg); border-radius: 15px; padding: 15px; text-align: center; border: var(--glass-border);" onclick="watchVideoTask()">
+                    <i class="fas fa-play-circle" style="font-size: 28px; color: #60a5fa; margin-bottom: 8px;"></i>
+                    <span style="display:block;">ভিডিও অ্যাড</span>
+                    <small style="color:#aaa;">৳২.০০/ভিউ</small>
+                </div>
+                <div style="background: var(--glass-bg); border-radius: 15px; padding: 15px; text-align: center; border: var(--glass-border);" onclick="navTo('spin-page', 'nav-spin')">
+                    <i class="fas fa-dharmachakra" style="font-size: 28px; color: #f472b6; margin-bottom: 8px;"></i>
+                    <span style="display:block;">স্পিন হুইল</span>
+                    <small style="color:#aaa;">ভিডিও দেখুন</small>
+                </div>
+            </div>
+
+            <!-- 3. Adsterra Banner (Added Here) -->
+            <div class="ad-container">
+                <center>
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '2abc83c3555d4e7e8269a58bdeefa15c',
+                            'format' : 'iframe',
+                            'height' : 50,
+                            'width' : 320,
+                            'params' : {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/2abc83c3555d4e7e8269a58bdeefa15c/invoke.js"></script>
+                </center>
+            </div>
+        </div>
+
+        <!-- ================= PAGE: TASKS ================= -->
+        <div id="task-page" class="page">
+            <h2 style="font-size: 18px; margin-bottom: 15px;">সকল টাস্ক</h2>
+            <div class="task-list" id="task-container">
+                <!-- Dynamic Tasks -->
+            </div>
+        </div>
+
+        <!-- ================= PAGE: SPIN ================= -->
+        <div id="spin-page" class="page">
+            <h2 style="text-align: center; margin-bottom: 20px;">স্পিন & উইন</h2>
+            <div class="spin-container">
+                <div class="wheel-wrapper">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel-outer" id="wheel">
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(30deg) translateY(-85px);">৳০.৫০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(90deg) translateY(-85px);">৳১.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(150deg) translateY(-85px);">৳২.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(210deg) translateY(-85px);">৳০.৫০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(270deg) translateY(-85px);">৳৩.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(330deg) translateY(-85px);">৳৫.০০</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
+                    <p style="color: #fbbf24; font-weight: bold; margin-bottom: 5px;">পুরস্কার:</p>
+                    <p style="font-size: 13px;">ভিডিও দেখে হুইলটি ঘোরান এবং জিতে নিন নিশ্চিত পুরস্কার!</p>
+                </div>
+
+                <button class="btn-main" onclick="spinWheel()" id="spin-btn">
+                    <i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE: WALLET ================= -->
+        <div id="wallet-page" class="page">
+            <h2 style="font-size: 18px; margin-bottom: 15px;">ওয়ালেট & হিস্ট্রি</h2>
+            
+            <div class="balance-card" style="padding: 15px; margin-bottom: 15px;">
+                <span class="balance-amount" style="font-size: 28px;">৳ <span id="wallet-balance">0.00</span></span>
+                <span style="font-size: 14px; opacity: 0.8;">উত্তোলনযোগ্য ব্যালেন্স</span>
+            </div>
+
+            <!-- Withdrawal Form -->
+            <div style="background: var(--glass-bg); padding: 20px; border-radius: 20px; border: var(--glass-border); margin-bottom: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 5px;">
+                         <span>রেফার স্ট্যাটাস (১০টি প্রয়োজন)</span>
+                         <span><span id="ref-progress-text">0</span>/10</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="ref-progress-bar"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <select id="w-method" class="form-control">
+                        <option value="bkash">বিকাশ (bKash)</option>
+                        <option value="nagad">নগদ (Nagad)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="w-phone" class="form-control" placeholder="মোবাইল নাম্বার">
+                </div>
+                <div class="form-group">
+                    <input type="number" id="w-amount" class="form-control" placeholder="টাকার পরিমাণ (মিন: ১২০)">
+                </div>
+                
+                <p style="color: #fbbf24; font-size: 13px; text-align: center; margin-bottom: 10px; display: none;" id="min-withdraw-alert">
+                    <i class="fas fa-exclamation-triangle"></i> সর্বনিম্ন উইথড্র ১২০ টাকা।
+                </p>
+
+                <button class="btn-main" id="withdraw-btn" onclick="initiateWithdraw()">উত্তোলন করুন</button>
+            </div>
+
+            <!-- History Section -->
+            <h3 style="font-size: 16px; margin-bottom: 10px;">লেনদেনের ইতিহাস</h3>
+            <p style="font-size: 11px; color: #aaa; margin-bottom: 10px;">* টাকা পাওয়ার পর 'Pending' এ ক্লিক করে অ্যাডমিনের দেওয়া কোড বসান।</p>
+            <div id="history-container" class="history-list">
+                <div style="text-align:center; color:#666; font-size:12px;">কোনো লেনদেন পাওয়া যায়নি</div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE: REFER ================= -->
+        <div id="refer-page" class="page">
+            <div style="text-align: center; padding: 20px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/1256/1256650.png" width="80" style="margin-bottom: 15px;">
+                <h2>রেফার বোনাস</h2>
+                <p style="color: #94a3b8;">১০ জন বন্ধুকে রেফার করে উইথড্র আনলক করুন!</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin: 20px 0;">
+                    <input type="text" id="ref-link" class="form-control" style="text-align: center;" readonly>
+                    <button onclick="copyRef()" style="background: transparent; border: none; color: #4ade80; margin-top: 10px; font-weight: bold;">লিংক কপি করুন</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home" onclick="navTo('home-page', 'nav-home')"><i class="fas fa-home"></i> <span>হোম</span></div>
+        <div class="nav-item" id="nav-earn" onclick="navTo('task-page', 'nav-earn')"><i class="fas fa-list-check"></i> <span>আর্ন</span></div>
+        <div class="nav-item" id="nav-spin" onclick="navTo('spin-page', 'nav-spin')"><i class="fas fa-dharmachakra"></i> <span>স্পিন</span></div>
+        <div class="nav-item" id="nav-wallet" onclick="navTo('wallet-page', 'nav-wallet')"><i class="fas fa-wallet"></i> <span>ওয়ালেট</span></div>
+        <div class="nav-item" id="nav-refer" onclick="navTo('refer-page', 'nav-refer')"><i class="fas fa-users"></i> <span>রেফার</span></div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // CONFIGURATION
+        const CONFIG = {
+            MIN_WITHDRAW: 120, 
+            MIN_REFERRALS: 10,
+            REWARD_VIDEO: 2.00,
+            SPIN_REWARDS: [0.50, 1.00, 2.00, 0.50, 3.00, 5.00],
+            BOT_TOKEN: "8595624958:AAFFHd9VVrEL1xnIE2lCKhEGKObvpMf9fvk", 
+            ADMIN_ID: "5009423084",
+            SECRET_CODE: "PAID"
+        };
+
+        // State
+        let user = {
+            id: tg.initDataUnsafe?.user?.id || 123456,
+            first_name: tg.initDataUnsafe?.user?.first_name || "Guest",
+            photo_url: tg.initDataUnsafe?.user?.photo_url || null,
+            username: tg.initDataUnsafe?.user?.username || "unknown",
+            balance: parseFloat(localStorage.getItem('balance')) || 0.00,
+            referrals: parseInt(localStorage.getItem('referrals')) || 0,
+            lastCheckin: localStorage.getItem('lastCheckin') || "",
+            streak: parseInt(localStorage.getItem('streak')) || 0,
+            history: JSON.parse(localStorage.getItem('history')) || []
+        };
+
+        const tasks = [
+            { id: 1, title: "Telegram Channel", reward: 5.00, icon: "fab fa-telegram", color: "#229ED9", link: "https://t.me/yourchan" },
+            { id: 2, title: "Visit Website", reward: 1.50, icon: "fas fa-globe", color: "#10b981", link: "https://google.com" }
+        ];
+
+        window.onload = () => {
+            initUI();
+            renderTasks();
+            renderDailyGrid();
+            renderHistory();
+            startFakeNotifications();
+        };
+
+        function initUI() {
+            document.getElementById('user-name').innerText = user.first_name;
+            document.getElementById('user-id').innerText = user.id;
+            if(user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+            updateBalanceUI();
+            const botUsername = "EarningBDBot"; 
+            document.getElementById('ref-link').value = `https://t.me/${botUsername}?start=${user.id}`;
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('header-balance').innerText = user.balance.toFixed(2);
+            document.getElementById('main-balance').innerText = user.balance.toFixed(2);
+            document.getElementById('wallet-balance').innerText = user.balance.toFixed(2);
+            localStorage.setItem('balance', user.balance);
+            localStorage.setItem('referrals', user.referrals);
+            updateReferralBar();
+        }
+
+        function updateReferralBar() {
+            document.getElementById('home-ref-count').innerText = user.referrals;
+            document.getElementById('ref-progress-text').innerText = user.referrals;
+            let percentage = (user.referrals / CONFIG.MIN_REFERRALS) * 100;
+            if(percentage > 100) percentage = 100;
+            document.getElementById('ref-progress-bar').style.width = percentage + "%";
+            document.getElementById('ref-progress-bar').style.backgroundColor = user.referrals >= CONFIG.MIN_REFERRALS ? "#4ade80" : "#fbbf24";
+        }
+
+        // ================= COLORFUL DAILY CHECK-IN =================
+        function renderDailyGrid() {
+            const container = document.getElementById('daily-grid');
+            container.innerHTML = '';
+            const today = new Date().toDateString();
+            const rewards = [1, 2, 3, 5, 7, 10, 15]; 
+            
+            for(let i=0; i<7; i++) {
+                let statusClass = 'locked'; 
+                let icon = '';
+
+                if (i < user.streak) {
+                    statusClass = 'claimed'; 
+                    icon = '✔';
+                } else if (i === user.streak) {
+                    if (user.lastCheckin === today) {
+                        statusClass = 'claimed';
+                        icon = '✔';
+                    } else {
+                        statusClass = 'active'; 
+                    }
+                }
+
+                container.innerHTML += `
+                <div class="day-box ${statusClass}" onclick="claimDaily(${i}, ${rewards[i]})">
+                    ${icon ? icon + '<br>' : ''} Day ${i+1}<br>৳${rewards[i]}
+                </div>`;
+            }
+        }
+
+        function claimDaily(day, amount) {
+            const today = new Date().toDateString();
+            if (day !== user.streak && !(day === user.streak && user.lastCheckin === today)) {
+                if (day > user.streak) showToast("আগের দিনের বোনাস নিন!", "error");
+                return;
+            }
+            if(user.lastCheckin === today) {
+                showToast("আজকের বোনাস নেওয়া হয়েছে!", "error");
+                return;
+            }
+            addBalance(amount);
+            user.lastCheckin = today;
+            user.streak = (user.streak + 1) % 8; 
+            if (user.streak === 0) user.streak = 7; 
+            localStorage.setItem('lastCheckin', today);
+            localStorage.setItem('streak', user.streak);
+            renderDailyGrid();
+            showToast(`ধন্যবাদ! বোনাস ৳${amount} যোগ হয়েছে!`, "success");
+            fireConfetti();
+        }
+
+        // ================= TASKS & SPIN =================
+        function renderTasks() {
+            const container = document.getElementById('task-container');
+            container.innerHTML = '';
+            tasks.forEach(task => {
+                container.innerHTML += `
+                    <div class="task-item">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width:40px; height:40px; background:rgba(255,255,255,0.1); border-radius:10px; display:flex; align-items:center; justify-content:center; color:${task.color}; font-size:18px;">
+                                <i class="${task.icon}"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin:0; font-size:14px;">${task.title}</h4>
+                                <span style="font-size:12px; color:#4ade80;">+৳${task.reward.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <button class="task-btn" onclick="openLink('${task.link}', ${task.reward})">Start</button>
+                    </div>
+                `;
+            });
+        }
+
+        function watchVideoTask() {
+            if (typeof show_10398759 === 'function') {
+                showToast("Video Loading...", "info");
+                show_10398759().then(() => {
+                    addBalance(CONFIG.REWARD_VIDEO);
+                    showToast("Video Reward Added!", "success");
+                    fireConfetti();
+                }).catch(() => showToast("Failed to load video", "error"));
+            } else {
+                showToast("Ad Network Error!", "error");
+            }
+        }
+
+        function openLink(link, reward) {
+            window.open(link, '_blank');
+            setTimeout(() => {
+                if(confirm("কাজ সম্পন্ন করেছেন?")) {
+                    addBalance(reward);
+                    showToast("Bonus Added!", "success");
+                }
+            }, 5000);
+        }
+
+        function spinWheel() {
+            const btn = document.getElementById('spin-btn');
+            if (typeof show_10398759 !== 'function') {
+                showToast("নেট কানেকশন চেক করুন!", "error");
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...';
+            show_10398759().then(() => { runSpinAnimation(btn); }).catch((e) => {
+                showToast("বিজ্ঞাপন দেখা হয়নি!", "error");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন';
+            });
+        }
+
+        function runSpinAnimation(btn) {
+            const wheel = document.getElementById('wheel');
+            const deg = Math.floor(5000 + Math.random() * 5000);
+            btn.innerHTML = 'স্পিন হচ্ছে...';
+            wheel.style.transform = `rotate(${deg}deg)`;
+            setTimeout(() => {
+                const winAmount = CONFIG.SPIN_REWARDS[Math.floor(Math.random() * CONFIG.SPIN_REWARDS.length)];
+                addBalance(winAmount);
+                showToast(`জিতেছেন ৳${winAmount.toFixed(2)}`, "success");
+                wheel.style.transform = "rotate(0deg)";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন';
+                fireConfetti();
+            }, 4000);
+        }
+
+        // ================= WITHDRAW & VERIFY =================
+        function initiateWithdraw() {
+            const amount = parseFloat(document.getElementById('w-amount').value);
+            const phone = document.getElementById('w-phone').value;
+            const method = document.getElementById('w-method').value;
+            const btn = document.getElementById('withdraw-btn');
+
+            if(!phone || phone.length < 11) return showToast("সঠিক মোবাইল নাম্বার দিন", "error");
+            if(amount < CONFIG.MIN_WITHDRAW) {
+                document.getElementById('min-withdraw-alert').style.display = 'block';
+                return showToast(`মিনিমাম উইথড্র ${CONFIG.MIN_WITHDRAW} টাকা`, "error");
+            } else { document.getElementById('min-withdraw-alert').style.display = 'none'; }
+            if(amount > user.balance) return showToast("ব্যালেন্স নেই!", "error");
+            if(user.referrals < CONFIG.MIN_REFERRALS) return showToast(`১০টি রেফার প্রয়োজন!`, "error");
+
+            btn.disabled = true;
+            btn.innerText = "প্রসেসিং...";
+            addBalance(-amount);
+            addToHistory(amount, method, phone);
+
+            const msg = `🚀 NEW WITHDRAW\n👤 ${user.first_name}\n💰 ${amount} Tk\n📱 ${method}: ${phone}`;
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage?chat_id=${CONFIG.ADMIN_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+
+            setTimeout(() => {
+                showToast("রিকোয়েস্ট সফল হয়েছে!", "success");
+                btn.innerText = "উত্তোলন করুন";
+                btn.disabled = false;
+                fireConfetti();
+            }, 2000);
+        }
+
+        function addToHistory(amount, method, phone) {
+            const txn = {
+                date: new Date().toLocaleDateString(),
+                amount: amount,
+                method: method,
+                status: "Pending"
+            };
+            user.history.unshift(txn); 
+            if(user.history.length > 5) user.history.pop();
+            localStorage.setItem('history', JSON.stringify(user.history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            if(user.history.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666; font-size:12px;">কোনো লেনদেন নেই</div>';
+                return;
+            }
+            container.innerHTML = '';
+            user.history.forEach((txn, index) => {
+                let statusHtml = `<span class="status-btn" onclick="verifyPayment(${index})">Pending</span>`;
+                if(txn.status === "Success") {
+                    statusHtml = `<span class="status-success"><i class="fas fa-check-circle"></i> Paid</span>`;
+                }
+                container.innerHTML += `
+                    <div class="history-item">
+                        <div>
+                            <span style="display:block; color:#fff; font-weight:bold;">উত্তোলন (${txn.method})</span>
+                            <span style="color:#aaa; font-size:11px;">${txn.date}</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="display:block; color:#fff; font-weight:bold;">৳${txn.amount}</span>
+                            ${statusHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function verifyPayment(index) {
+            const code = prompt("অ্যাডমিন থেকে পাওয়া কোডটি দিন:");
+            if(code === CONFIG.SECRET_CODE) {
+                user.history[index].status = "Success";
+                localStorage.setItem('history', JSON.stringify(user.history));
+                renderHistory();
+                showToast("পেমেন্ট ভেরিফাইড!", "success");
+                fireConfetti();
+            } else {
+                showToast("ভুল কোড!", "error");
+            }
+        }
+
+        // ================= UTILS =================
+        function addBalance(amount) {
+            user.balance += amount;
+            updateBalanceUI();
+        }
+
+        function fireConfetti() {
+            for(let i=0; i<30; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                conf.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 3000);
+            }
+        }
+
+        function startFakeNotifications() {
+            const names = ["Rahim", "Karim", "Sujon", "Mina", "Robi"];
+            const amounts = [120, 200, 500, 150];
+            const notify = document.getElementById('live-notify');
+            setInterval(() => {
+                const name = names[Math.floor(Math.random() * names.length)];
+                const amt = amounts[Math.floor(Math.random() * amounts.length)];
+                document.getElementById('notify-text').innerText = `${name} withdraw ৳${amt}`;
+                notify.style.opacity = "1";
+                notify.style.top = "20px";
+                setTimeout(() => { notify.style.opacity = "0"; notify.style.top = "10px"; }, 3000);
+            }, 15000);
+        }
+
+        function navTo(pageId, navId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(navId).classList.add('active');
+        }
+
+        function copyRef() {
+            document.getElementById('ref-link').select();
+            document.execCommand('copy');
+            showToast("লিংক কপি হয়েছে!", "success");
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = "block";
+            toast.style.color = type === "error" ? "#ff4757" : "#2ed573";
+            setTimeout(() => toast.style.display = "none", 3000);
+        }
+    </script>
+</body>
+</html>
