@@ -652,6 +652,556 @@
 
     </script>
 </body>
+</html>        /* Task List */
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+        .task-item {
+            background: var(--glass-bg); padding: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: var(--glass-border); transition: 0.2s;
+        }
+        .task-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+        .task-btn {
+            background: var(--tg-theme-button-color); color: #fff; border: none;
+            padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+        }
+
+        /* Spin Wheel */
+        .spin-container { text-align: center; padding: 20px; }
+        .wheel-wrapper { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+        .wheel-outer {
+            width: 100%; height: 100%; border-radius: 50%; border: 8px solid #fbbf24; overflow: hidden;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            background: conic-gradient(#ff6b6b 0deg 60deg, #feca57 60deg 120deg, #48dbfb 120deg 180deg, #ff9ff3 180deg 240deg, #54a0ff 240deg 300deg, #1dd1a1 300deg 360deg);
+            position: relative;
+        }
+        .wheel-label {
+            position: absolute; top: 50%; left: 50%; transform-origin: 0 0;
+            color: #fff; font-weight: bold; font-size: 14px; width: 60px; text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .wheel-pointer {
+            position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #fff; z-index: 10;
+        }
+
+        /* History */
+        .history-list { margin-top: 20px; }
+        .history-item {
+            display: flex; justify-content: space-between; padding: 12px;
+            background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 8px; font-size: 13px;
+        }
+        .status-btn {
+            background: #facc15; color: #000; border: none; padding: 3px 8px;
+            border-radius: 5px; font-size: 11px; cursor: pointer; font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        .status-paid { color: #4ade80; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        
+        /* Elements */
+        .form-group { margin-bottom: 15px; }
+        .form-control { width: 100%; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 16px; outline: none; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 15px; border: none; background: var(--primary-grad); color: white; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .progress-container { width: 100%; background-color: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px 0; }
+        .progress-bar { height: 10px; background-color: #4ade80; border-radius: 10px; width: 0%; transition: 0.3s; }
+
+        /* Navigation */
+        .bottom-nav {
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            width: 92%; background: rgba(20, 30, 48, 0.95); backdrop-filter: blur(10px);
+            border-radius: 25px; padding: 12px; display: flex; justify-content: space-around;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-item { color: #64748b; font-size: 12px; text-align: center; width: 20%; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .nav-item.active { color: #a5b4fc; transform: translateY(-5px); }
+
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #toast { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 20px; border-radius: 50px; font-weight: bold; z-index: 2000; display: none; }
+        .confetti { position: fixed; width: 8px; height: 8px; background-color: #f00; animation: fall 3s linear infinite; z-index: 9999; }
+        @keyframes fall { to { transform: translateY(100vh) rotate(720deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Monetag Script -->
+    <script src='//libtl.com/sdk.js' data-zone='10398759' data-sdk='show_10398759'></script>
+    
+    <!-- 2. Adsterra Popunder Script -->
+    <script src="https://pl28329844.effectivegatecpm.com/ad/b0/fd/adb0fd5a3b4bc6b71113b020eb93777f.js"></script>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; color: #a5b4fc;">ডাটাবেস কানেক্ট হচ্ছে...</p>
+    </div>
+
+    <!-- MAIN APP CONTENT (Hidden initially) -->
+    <div class="container" id="app-content" style="display: none;">
+        
+        <div id="live-notify" class="live-notify">
+            <img src="https://via.placeholder.com/20" alt="">
+            <span id="notify-text">Notify</span>
+        </div>
+        <div id="toast">Msg</div>
+
+        <!-- PAGE: HOME -->
+        <div id="home-page" class="page active">
+            <div class="profile-header">
+                <div class="user-info">
+                    <img src="https://via.placeholder.com/50" class="user-avatar">
+                    <div class="user-text">
+                        <h3 id="user-name">...</h3>
+                        <p>ID: <span id="user-id">...</span></p>
+                    </div>
+                </div>
+                <div class="balance-badge">৳ <span id="header-balance">0.00</span></div>
+            </div>
+
+            <div class="balance-card">
+                <span style="font-size: 14px; opacity: 0.8;">আমার মোট ব্যালেন্স</span>
+                <span class="balance-amount">৳ <span id="main-balance">0.00</span></span>
+                <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; display: inline-block; font-size: 12px;">
+                    👥 রেফার: <span id="home-ref-count">0</span>/10
+                </div>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 15px 0 10px 0;"><i class="fas fa-calendar-alt"></i> ডেইলি চেক-ইন</h3>
+            <div class="daily-grid" id="daily-grid"></div>
+
+            <h3 style="font-size: 16px; margin-bottom: 10px;"><i class="fas fa-bolt"></i> কুইক আর্ন</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="background: var(--glass-bg); padding: 15px; border-radius: 15px; text-align: center; border: var(--glass-border);" onclick="window.watchVideoTask()">
+                    <i class="fas fa-play-circle" style="font-size: 25px; color: #60a5fa;"></i>
+                    <p style="margin: 5px 0 0 0;">ভিডিও অ্যাড</p>
+                    <small style="color: #aaa;">৳২.০০</small>
+                </div>
+                <div style="background: var(--glass-bg); padding: 15px; border-radius: 15px; text-align: center; border: var(--glass-border);" onclick="window.navTo('spin-page', 'nav-spin')">
+                    <i class="fas fa-dharmachakra" style="font-size: 25px; color: #f472b6;"></i>
+                    <p style="margin: 5px 0 0 0;">স্পিন হুইল</p>
+                    <small style="color: #aaa;">Win Bonus</small>
+                </div>
+            </div>
+
+            <!-- 3. Adsterra Banner -->
+            <div class="ad-container">
+                <center>
+                    <script type="text/javascript">
+                        atOptions = { 'key' : '2abc83c3555d4e7e8269a58bdeefa15c', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };
+                    </script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/2abc83c3555d4e7e8269a58bdeefa15c/invoke.js"></script>
+                </center>
+            </div>
+        </div>
+
+        <!-- PAGE: TASKS -->
+        <div id="task-page" class="page">
+            <h2 style="font-size: 18px;">সকল টাস্ক</h2>
+            <div class="task-list" id="task-container"></div>
+        </div>
+
+        <!-- PAGE: SPIN -->
+        <div id="spin-page" class="page">
+            <h2 style="text-align: center; margin-bottom: 20px;">স্পিন & উইন</h2>
+            <div class="spin-container">
+                <div class="wheel-wrapper">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel-outer" id="wheel">
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(30deg) translateY(-85px);">৳০.৫০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(90deg) translateY(-85px);">৳১.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(150deg) translateY(-85px);">৳২.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(210deg) translateY(-85px);">৳০.৫০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(270deg) translateY(-85px);">৳৩.০০</span>
+                        <span class="wheel-label" style="transform: translate(-50%, -50%) rotate(330deg) translateY(-85px);">৳৫.০০</span>
+                    </div>
+                </div>
+                <button class="btn-main" onclick="window.spinWheel()" id="spin-btn" style="margin-top: 20px;">
+                    <i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন
+                </button>
+            </div>
+        </div>
+
+        <!-- PAGE: WALLET -->
+        <div id="wallet-page" class="page">
+            <div class="balance-card">
+                <span class="balance-amount">৳ <span id="wallet-balance">0.00</span></span>
+                <span>বর্তমান ব্যালেন্স</span>
+            </div>
+            
+            <div style="background: var(--glass-bg); padding: 15px; border-radius: 15px; margin: 15px 0; border: var(--glass-border);">
+                <small style="color: #facc15; display: block; margin-bottom: 5px;">⚠ উইথড্র করতে ১২০ টাকা এবং ১০ রেফার আবশ্যক।</small>
+                <div style="background: rgba(255,255,255,0.1); height: 5px; border-radius: 5px; width: 100%; margin-bottom: 10px;">
+                    <div id="ref-bar" style="height: 100%; width: 0%; background: #4ade80; border-radius: 5px;"></div>
+                </div>
+                
+                <select id="w-method" class="form-control">
+                    <option value="bkash">বিকাশ</option>
+                    <option value="nagad">নগদ</option>
+                </select>
+                <input type="number" id="w-phone" class="form-control" placeholder="নাম্বার">
+                <input type="number" id="w-amount" class="form-control" placeholder="পরিমাণ (১২০+)">
+                <button class="btn-main" onclick="window.initiateWithdraw()">উত্তোলন করুন</button>
+            </div>
+
+            <h3 style="font-size: 16px;">লেনদেন হিস্টোরি</h3>
+            <div id="history-container" class="history-list"></div>
+        </div>
+
+        <!-- PAGE: REFER -->
+        <div id="refer-page" class="page">
+            <div style="text-align: center; padding: 20px;">
+                <img src="https://cdn-icons-png.flaticon.com/512/1256/1256650.png" width="80" style="margin-bottom: 15px;">
+                <h2>রেফার বোনাস</h2>
+                <p style="color: #94a3b8;">১০ জন বন্ধুকে রেফার করে উইথড্র আনলক করুন!</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin: 20px 0;">
+                    <input type="text" id="ref-link" class="form-control" style="text-align: center;" readonly>
+                    <button class="btn-main" onclick="window.copyRef()" style="margin-top: 5px; padding: 10px; background: transparent; border: 1px solid #4ade80; color: #4ade80;">লিংক কপি করুন</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home" onclick="window.navTo('home-page', 'nav-home')"><i class="fas fa-home"></i> হোম</div>
+        <div class="nav-item" id="nav-earn" onclick="window.navTo('task-page', 'nav-earn')"><i class="fas fa-list-check"></i> আর্ন</div>
+        <div class="nav-item" id="nav-spin" onclick="window.navTo('spin-page', 'nav-spin')"><i class="fas fa-dharmachakra"></i> স্পিন</div>
+        <div class="nav-item" id="nav-wallet" onclick="window.navTo('wallet-page', 'nav-wallet')"><i class="fas fa-wallet"></i> ওয়ালেট</div>
+        <div class="nav-item" id="nav-refer" onclick="window.navTo('refer-page', 'nav-refer')"><i class="fas fa-users"></i> রেফার</div>
+    </div>
+
+    <!-- FIREBASE LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // === YOUR CONFIGURATION ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0Sooyj3wDl8ckPeaigxEcxbmRlgn41Pc",
+            authDomain: "earning-bd-5859a.firebaseapp.com",
+            databaseURL: "https://earning-bd-5859a-default-rtdb.firebaseio.com",
+            projectId: "earning-bd-5859a",
+            storageBucket: "earning-bd-5859a.firebasestorage.app",
+            messagingSenderId: "298614461796",
+            appId: "1:298614461796:web:3f65c5bbfd61284aded671"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // App Config
+        const CONFIG = {
+            MIN_WITHDRAW: 120,
+            MIN_REFERRALS: 10,
+            REWARD_VIDEO: 2.00,
+            BOT_TOKEN: "8595624958:AAFFHd9VVrEL1xnIE2lCKhEGKObvpMf9fvk",
+            ADMIN_ID: "5009423084"
+        };
+
+        // User Setup
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const user = tg.initDataUnsafe?.user || { id: 12345, first_name: "Guest", username: "guest" }; 
+        const userId = user.id;
+
+        // Tasks List
+        const TASKS = [
+            { id: 1, title: "Telegram Channel", reward: 5.00, icon: "fab fa-telegram", color: "#229ED9", link: "https://t.me/yourchan" },
+            { id: 2, title: "Visit Website", reward: 1.50, icon: "fas fa-globe", color: "#10b981", link: "https://google.com" }
+        ];
+
+        let userData = {
+            balance: 0, referrals: 0, lastCheckin: "", streak: 0, history: []
+        };
+
+        // === FIX: FORCE LOAD IF FIREBASE IS SLOW ===
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            if (loader && loader.style.display !== 'none') {
+                loader.style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                updateUI(); // Show empty/default UI
+            }
+        }, 5000); // 5 Seconds Timeout
+
+        // Database Listener
+        const userRef = ref(db, 'users/' + userId);
+        
+        // Error handling added to onValue
+        onValue(userRef, (snapshot) => {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+
+            if (snapshot.exists()) {
+                userData = snapshot.val();
+                if (!userData.history) userData.history = [];
+            } else {
+                // First Time User
+                update(userRef, {
+                    id: userId,
+                    first_name: user.first_name,
+                    username: user.username,
+                    balance: 0,
+                    referrals: 0,
+                    streak: 0,
+                    history: []
+                }).catch(err => console.log("Write Error:", err));
+                
+                // Handle Referral Bonus
+                const startParam = tg.initDataUnsafe?.start_param;
+                if(startParam && startParam != userId) {
+                    const referrerRef = ref(db, 'users/' + startParam);
+                    get(referrerRef).then((snap) => {
+                        if(snap.exists()) {
+                            let refData = snap.val();
+                            update(referrerRef, {
+                                referrals: (refData.referrals || 0) + 1,
+                                balance: (refData.balance || 0) + 5 // 5 TK Ref Bonus
+                            });
+                        }
+                    });
+                }
+            }
+            updateUI();
+        }, (error) => {
+            console.error("Firebase Error:", error);
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            showToast("Offline Mode / Rules Locked", "red");
+        });
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('user-name').innerText = user.first_name;
+            document.getElementById('user-id').innerText = userId;
+            document.querySelector('.user-avatar').src = user.photo_url || "https://via.placeholder.com/50";
+            
+            const bal = (userData.balance || 0).toFixed(2);
+            document.getElementById('header-balance').innerText = bal;
+            document.getElementById('main-balance').innerText = bal;
+            document.getElementById('wallet-balance').innerText = bal;
+            document.getElementById('home-ref-count').innerText = userData.referrals || 0;
+            document.getElementById('ref-link').value = `https://t.me/EarningBDBot?start=${userId}`;
+
+            // Ref Bar
+            let percent = ((userData.referrals || 0) / CONFIG.MIN_REFERRALS) * 100;
+            if(percent > 100) percent = 100;
+            document.getElementById('ref-bar').style.width = percent + "%";
+
+            renderDaily();
+            renderTasks();
+            renderHistory();
+        }
+
+        // --- GLOBAL FUNCTIONS ---
+
+        window.watchVideoTask = () => {
+            if (typeof show_10398759 === 'function') {
+                showToast("Loading Video...", "orange");
+                show_10398759().then(() => {
+                    update(userRef, { balance: (userData.balance || 0) + CONFIG.REWARD_VIDEO });
+                    showToast("Reward Added!", "green");
+                    fireConfetti();
+                }).catch(() => showToast("Ad Closed/Error", "red"));
+            } else {
+                showToast("Ad Network Error", "red");
+            }
+        };
+
+        window.spinWheel = () => {
+            if (typeof show_10398759 !== 'function') return showToast("Ad Error!", "red");
+            const btn = document.getElementById('spin-btn');
+            btn.disabled = true;
+            btn.innerHTML = "Loading Ad...";
+
+            show_10398759().then(() => {
+                const wheel = document.getElementById('wheel');
+                const deg = Math.floor(3000 + Math.random() * 3000);
+                wheel.style.transform = `rotate(${deg}deg)`;
+                
+                setTimeout(() => {
+                    const rewards = [0.5, 1, 2, 0.5, 3, 5];
+                    const win = rewards[Math.floor(Math.random()*rewards.length)];
+                    update(userRef, { balance: (userData.balance || 0) + win });
+                    
+                    wheel.style.transform = `rotate(0deg)`;
+                    btn.innerHTML = `<i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন`;
+                    btn.disabled = false;
+                    showToast(`Won ৳${win}`, "green");
+                    fireConfetti();
+                }, 4000);
+            }).catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-video"></i> ভিডিও দেখুন & স্পিন করুন`;
+                showToast("Video Ad required!", "red");
+            });
+        };
+
+        window.claimDaily = (day, reward) => {
+            const today = new Date().toDateString();
+            if(day > (userData.streak || 0)) return showToast("Previous day pending!", "red");
+            if(userData.lastCheckin === today) return showToast("Come back tomorrow!", "red");
+
+            update(userRef, {
+                balance: (userData.balance || 0) + reward,
+                lastCheckin: today,
+                streak: (day + 1) % 8 
+            });
+            showToast("Bonus Added!", "green");
+            fireConfetti();
+        };
+
+        window.initiateWithdraw = () => {
+            const amt = parseFloat(document.getElementById('w-amount').value);
+            const ph = document.getElementById('w-phone').value;
+            const met = document.getElementById('w-method').value;
+
+            if(!ph || ph.length < 11) return showToast("Invalid Number", "red");
+            if(amt < CONFIG.MIN_WITHDRAW) return showToast(`Min Withdraw ৳${CONFIG.MIN_WITHDRAW}`, "red");
+            if(amt > (userData.balance || 0)) return showToast("Low Balance", "red");
+            if((userData.referrals || 0) < CONFIG.MIN_REFERRALS) return showToast("Need 10 Referrals", "red");
+
+            const newHistory = [...(userData.history || []), {
+                date: new Date().toLocaleDateString(),
+                amount: amt,
+                method: met,
+                phone: ph,
+                status: "Pending"
+            }];
+
+            update(userRef, {
+                balance: userData.balance - amt,
+                history: newHistory
+            });
+
+            // Telegram Notification
+            const msg = `🚀 *WITHDRAW*\n👤 ${user.first_name}\n🆔 ${user.id}\n💰 ৳${amt}\n📱 ${met} (${ph})`;
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage?chat_id=${CONFIG.ADMIN_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+
+            showToast("Success! Please Wait.", "green");
+            fireConfetti();
+        };
+
+        window.verifyTxn = (index) => {
+            const code = prompt("Admin Code:");
+            if(code === "PAID") {
+                let h = [...userData.history];
+                const realIndex = h.length - 1 - index; 
+                h[realIndex].status = "Paid";
+                update(userRef, { history: h });
+                showToast("Verified!", "green");
+            } else {
+                showToast("Wrong Code", "red");
+            }
+        };
+
+        // Render Helpers
+        function renderDaily() {
+            const c = document.getElementById('daily-grid');
+            c.innerHTML = '';
+            const rewards = [1, 2, 3, 5, 7, 10, 15];
+            const today = new Date().toDateString();
+            const s = userData.streak || 0;
+
+            for(let i=0; i<7; i++) {
+                let cls = 'day-box locked';
+                if(i < s) cls = 'day-box claimed';
+                if(i === s) cls = userData.lastCheckin === today ? 'day-box claimed' : 'day-box active';
+                
+                c.innerHTML += `<div class="${cls}" onclick="window.claimDaily(${i}, ${rewards[i]})">Day ${i+1}<br>৳${rewards[i]}</div>`;
+            }
+        }
+
+        function renderTasks() {
+            const c = document.getElementById('task-container');
+            c.innerHTML = '';
+            TASKS.forEach(t => {
+                c.innerHTML += `
+                <div class="task-item">
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <i class="${t.icon}" style="font-size:20px;color:${t.color}"></i>
+                        <div><b>${t.title}</b><br><small style="color:#4ade80">+৳${t.reward}</small></div>
+                    </div>
+                    <button class="task-btn" onclick="window.openLink('${t.link}',${t.reward})">Go</button>
+                </div>`;
+            });
+        }
+
+        window.openLink = (url, reward) => {
+            window.open(url, '_blank');
+            setTimeout(() => {
+               if(confirm("Completed?")) {
+                   update(userRef, { balance: (userData.balance||0) + reward });
+                   showToast("Added!", "green");
+               } 
+            }, 5000);
+        }
+
+        function renderHistory() {
+            const c = document.getElementById('history-container');
+            c.innerHTML = '';
+            if(!userData.history || userData.history.length === 0) {
+                c.innerHTML = '<p style="text-align:center;color:#666">No History</p>'; return;
+            }
+            [...userData.history].reverse().forEach((h, i) => {
+                const status = h.status === 'Paid' ? '<span class="status-paid">Paid</span>' 
+                    : `<span class="status-btn" onclick="window.verifyTxn(${i})">Pending</span>`;
+                c.innerHTML += `
+                <div class="history-item">
+                    <div><b>Withdraw</b><br><small>${h.date}</small></div>
+                    <div style="text-align:right"><b>৳${h.amount}</b><br>${status}</div>
+                </div>`;
+            });
+        }
+
+        // Global Helpers
+        window.navTo = (page, nav) => {
+            document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+            document.getElementById(nav).classList.add('active');
+        };
+
+        window.copyRef = () => {
+            document.getElementById('ref-link').select();
+            document.execCommand('copy');
+            showToast("Copied!", "green");
+        }
+
+        function showToast(msg, color) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.color = color; t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        function fireConfetti() {
+            for(let i=0;i<20;i++){
+                let d = document.createElement('div'); d.className='confetti';
+                d.style.left = Math.random()*100+'vw';
+                d.style.animationDuration = Math.random()*2+2+'s';
+                d.style.background = `hsl(${Math.random()*360},100%,50%)`;
+                document.body.appendChild(d); setTimeout(()=>d.remove(), 3000);
+            }
+        }
+
+        // Fake Noti Loop
+        setInterval(() => {
+            const names = ["Abir", "Rakib", "Sumon", "Mina", "Jamal"];
+            const amts = [120, 200, 500, 150];
+            const el = document.getElementById('live-notify');
+            const txt = document.getElementById('notify-text');
+            
+            txt.innerText = `${names[Math.floor(Math.random()*names.length)]} withdraw ৳${amts[Math.floor(Math.random()*amts.length)]}`;
+            el.style.opacity = "1"; el.style.top = "20px";
+            setTimeout(() => { el.style.opacity = "0"; el.style.top = "10px"; }, 3000);
+        }, 15000);
+
+    </script>
+</body>
 </html>
         /* Task List */
         .task-list { display: flex; flex-direction: column; gap: 10px; }
